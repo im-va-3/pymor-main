@@ -1,0 +1,65 @@
+# Prevent git from showing duplicate names with commands like "git shortlog" (see docs/RELEASE_CHECKLIST.md)
+Alexandre Pasco <103425970+alexandre-pasco@users.noreply.github.com>
+Art Pelling <a.pelling@tu-berlin.de> <account@artpelling.de>
+Art Pelling <a.pelling@tu-berlin.de> Art J. R. Pelling <a.pelling@tu-berlin.de>
+Christian Himpe <himpe@mpi-magdeburg.mpg.de>
+Dennis Eickhorn <d.eickhorn@uni-muenster.de>
+Dennis Eickhorn <d.eickhorn@uni-muenster.de> <d.eickhorn@mail.de>
+Dennis Eickhorn <d.eickhorn@uni-muenster.de> <d.eickhorn@wwu.de>
+Falk Meyer <falk.meyer@uni-muenster.de>
+Felix Schindler <107669806+ftschindler@users.noreply.github.com>
+Felix Schindler <107669806+ftschindler@users.noreply.github.com> <felix.albrecht@uni-muenster.de>
+Felix Schindler <107669806+ftschindler@users.noreply.github.com> <felix.albrecht@wwu.de>
+Felix Schindler <107669806+ftschindler@users.noreply.github.com> <felix.schindler@wwu.de>
+Felix Schindler <107669806+ftschindler@users.noreply.github.com> <felix@schindlerfamily.de>
+Felix Schindler <107669806+ftschindler@users.noreply.github.com> <ftalbrecht@users.noreply.github.com>
+Felix Schindler <107669806+ftschindler@users.noreply.github.com> <ftschindler@noreply.github.com>
+Felix Schindler <107669806+ftschindler@users.noreply.github.com> <mail@felixalbrecht.de>
+Geordie McBain <gdmcbain@protonmail.com>
+Gonc Berk Gunes <goncberk@gmail.com> <32432787+Congpy@users.noreply.github.com>
+Hendrik Kleikamp <hendrik.kleikamp@uni-muenster.de>
+Hendrik Kleikamp <hendrik.kleikamp@uni-muenster.de> <h_klei18@uni-muenster.de>
+Hendrik Kleikamp <hendrik.kleikamp@uni-muenster.de> <hendrik.kleikamp@uni-graz.at>
+Jonas Nicodemus <jonas.nicodemus@icloud.com>
+Jonas Nicodemus <jonas.nicodemus@icloud.com> <44996273+Jonas-Nicodemus@users.noreply.github.com>
+Josefine Zeller <josefine_zeller@web.de> josefinez <josefine.zeller@web.de>
+Linus Balicki <balicki@vt.edu>
+Linus Balicki <balicki@vt.edu> <38659258+lbalicki@users.noreply.github.com>
+Linus Balicki <balicki@vt.edu> <linus.balicki@ovgu.de>
+Linus Balicki <balicki@vt.edu> <linuxte@yahoo.de>
+Luca Mechelli <luca.mechelli@uni-konstanz.de>
+Lucas Camphausen <lucascamp@web.de>
+Magnus Ostertag <MagnusOstertag@users.noreply.github.com>
+Maximilian Bindhak <bindhak@mpi-magdeburg.mpg.de>
+Maximilian Bindhak <bindhak@mpi-magdeburg.mpg.de> <153179496+maxbindhak@users.noreply.github.com>
+Meret Behrens <mbehrens@mpi-magdeburg.mpg.de>
+Meret Behrens <mbehrens@mpi-magdeburg.mpg.de> <50019307+meretp@users.noreply.github.com>
+Mohamed Adel Naguib Ahmed <mohamedadel1551998@gmail.com>
+Mohamed Adel Naguib Ahmed <mohamedadel1551998@gmail.com> mohamedadelnaguib
+Monica Dessole <monicadessole@gmail.com>
+Monica Dessole <monicadessole@gmail.com> <36501030+mdessole@users.noreply.github.com>
+Patrick Buchfink <patrick.buchfink@ians.uni-stuttgart.de>
+Patrick Buchfink <patrick.buchfink@ians.uni-stuttgart.de> <60570918+pbuchfink@users.noreply.github.com>
+Patrick Buchfink <patrick.buchfink@ians.uni-stuttgart.de> <st101726@stud.uni-stuttgart.de>
+Petar Mlinarić <petar.mlinaric@math.hr>
+Petar Mlinarić <petar.mlinaric@math.hr> <mlinaric@mpi-magdeburg.mpg.de>
+Petar Mlinarić <petar.mlinaric@math.hr> <mlinaric@vt.edu>
+Petar Mlinarić <petar.mlinaric@math.hr> <petar.mlinaric@gmail.com>
+Petar Mlinarić <petar.mlinaric@math.hr> <pmli@users.noreply.github.com>
+René Fritze <rene.fritze@uni-muenster.de>
+René Fritze <rene.fritze@uni-muenster.de> <47802+renefritze@users.noreply.github.com>
+René Fritze <rene.fritze@uni-muenster.de> <rene.fritze@wwu.de>
+René Fritze <rene.fritze@uni-muenster.de> <rene.milk@uni-muenster.de>
+René Fritze <rene.fritze@uni-muenster.de> <rene.milk@wwu.de>
+René Fritze <rene.fritze@uni-muenster.de> <renemilk@users.noreply.github.com>
+Stephan Rave <stephanrave@uni-muenster.de>
+Stephan Rave <stephanrave@uni-muenster.de> <mail@stephanrave.de>
+Sven Ullmann <ullmannsven@gmx.de>
+Sven Ullmann <ullmannsven@gmx.de> <84276962+ullmannsven@users.noreply.github.com>
+Timo Plath <timo.plath@uni-muenster.de> Timo Plath <70511858+TiPlath@users.noreply.github.com>
+Timo Plath <timo.plath@uni-muenster.de> timoplath <t.plath@utwente.nl>
+bergdoaa <anjabergdolt@googlemail.com>
+bergdoaa <anjabergdolt@googlemail.com> bergdola <116808098+bergdola@users.noreply.github.com>
+pyMOR Bot <bot@pymor.org>
+pyMOR Bot <bot@pymor.org> <ci@pymor.org>
+pyMOR Bot <bot@pymor.org> pyMOR-Bot <96825899+pyMOR-Bot@users.noreply.github.com>

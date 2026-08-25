@@ -1,0 +1,3 @@
+# pins for fenics ci image
+numpy<2
+sympy<1.14         # fenics is incompatible with newer sympy

@@ -1,0 +1,127 @@
+# This file is part of the pyMOR project (https://www.pymor.org).
+# Copyright pyMOR developers and contributors. All rights reserved.
+# License: BSD 2-Clause License (https://opensource.org/licenses/BSD-2-Clause)
+
+import numpy as np
+import pytest
+import scipy.linalg as spla
+import scipy.sparse as sps
+
+from pymor.solvers.matrix_equations.equations import SylvesterEquation
+
+pytestmark = pytest.mark.builtin
+
+
+n_list = [100, 1000]
+r_list = [1, 10, 20]
+m_list = [1, 2]
+p_list = [1, 2]
+
+
+def fro_norm(A):
+    if not sps.issparse(A):
+        return spla.norm(A)
+    else:
+        return sps.linalg.norm(A)
+
+
+def diff_conv_1d_fd(n, a, b):
+    diagonals = [-a * 2 * (n + 1) ** 2 * np.ones((n,)),
+                 (a * (n + 1) ** 2 + b * (n + 1) / 2) * np.ones((n - 1,)),
+                 (a * (n + 1) ** 2 - b * (n + 1) / 2) * np.ones((n - 1,))]
+    A = sps.diags(diagonals, [0, -1, 1])
+    return A
+
+
+def diff_conv_1d_fem(n, a, b):
+    diagonals = [-a * 2 * (n + 1) ** 2 * np.ones((n,)),
+                 (a * (n + 1) ** 2 + b * (n + 1) / 2) * np.ones((n - 1,)),
+                 (a * (n + 1) ** 2 - b * (n + 1) / 2) * np.ones((n - 1,))]
+    A = sps.diags(diagonals, [0, -1, 1])
+    diagonals = [2 / 3 * np.ones((n,)),
+                 1 / 6 * np.ones((n - 1,)),
+                 1 / 6 * np.ones((n - 1,))]
+    E = sps.diags(diagonals, [0, -1, 1])
+    return A, E
+
+
+@pytest.mark.parametrize('n', n_list)
+@pytest.mark.parametrize('r', r_list)
+@pytest.mark.parametrize('m', m_list)
+def test_sylv_schur_V(n, r, m, rng):
+    A = diff_conv_1d_fd(n, 1, 1)
+    B = rng.standard_normal((n, m))
+
+    Ar = rng.standard_normal((r, r)) - r * np.eye(r)
+    Br = rng.standard_normal((r, m))
+
+    Vva = SylvesterEquation.from_matrices(A, Ar, B=B, Br=Br).solve()
+    V = Vva.to_numpy()
+
+    AV = A.dot(V)
+    VArT = V.dot(Ar.T)
+    BBrT = B.dot(Br.T)
+    assert fro_norm(AV + VArT + BBrT) / fro_norm(BBrT) < 1e-10
+
+
+@pytest.mark.parametrize('n', n_list)
+@pytest.mark.parametrize('r', r_list)
+@pytest.mark.parametrize('m', m_list)
+def test_sylv_schur_V_E(n, r, m, rng):
+    A, E = diff_conv_1d_fem(n, 1, 1)
+    B = rng.standard_normal((n, m))
+
+    Ar = rng.standard_normal((r, r)) - r * np.eye(r)
+    Er = rng.standard_normal((r, r))
+    Er = (Er + Er.T) / 2
+    Er += r * np.eye(r)
+    Br = rng.standard_normal((r, m))
+
+    Vva = SylvesterEquation.from_matrices(A, Ar, E=E, Er=Er, B=B, Br=Br).solve()
+    V = Vva.to_numpy()
+
+    AVErT = A.dot(V.dot(Er.T))
+    EVArT = E.dot(V.dot(Ar.T))
+    BBrT = B.dot(Br.T)
+    assert fro_norm(AVErT + EVArT + BBrT) / fro_norm(BBrT) < 1e-10
+
+
+@pytest.mark.parametrize('n', n_list)
+@pytest.mark.parametrize('r', r_list)
+@pytest.mark.parametrize('p', p_list)
+def test_sylv_schur_W(n, r, p, rng):
+    A = diff_conv_1d_fd(n, 1, 1)
+    C = rng.standard_normal((p, n))
+
+    Ar = rng.standard_normal((r, r)) - r * np.eye(r)
+    Cr = rng.standard_normal((p, r))
+
+    Wva = SylvesterEquation.from_matrices(A, Ar, C=C, Cr=Cr).solve()
+    W = Wva.to_numpy()
+
+    ATW = A.T.dot(W)
+    WAr = W.dot(Ar)
+    CTCr = C.T.dot(Cr)
+    assert fro_norm(ATW + WAr + CTCr) / fro_norm(CTCr) < 1e-10
+
+
+@pytest.mark.parametrize('n', n_list)
+@pytest.mark.parametrize('r', r_list)
+@pytest.mark.parametrize('p', p_list)
+def test_sylv_schur_W_E(n, r, p, rng):
+    A, E = diff_conv_1d_fem(n, 1, 1)
+    C = rng.standard_normal((p, n))
+
+    Ar = rng.standard_normal((r, r)) - r * np.eye(r)
+    Er = rng.standard_normal((r, r))
+    Er = (Er + Er.T) / 2
+    Er += r * np.eye(r)
+    Cr = rng.standard_normal((p, r))
+
+    Wva = SylvesterEquation.from_matrices(A, Ar, E=E, Er=Er, C=C, Cr=Cr).solve()
+    W = Wva.to_numpy()
+
+    ATWEr = A.T.dot(W.dot(Er))
+    ETWAr = E.T.dot(W.dot(Ar))
+    CTCr = C.T.dot(Cr)
+    assert fro_norm(ATWEr + ETWAr + CTCr) / fro_norm(CTCr) < 1e-10

@@ -1,0 +1,394 @@
+stages:
+  - preflight
+  - docker images
+  - test/build
+  - deploy
+
+#************ definition of base jobs *********************************************************************************#
+
+.test_base:
+    retry:
+        max: 2
+        when:
+            - runner_system_failure
+            - api_failure
+    tags:
+      - autoscaling
+    rules:
+        - if: $CI_COMMIT_REF_NAME =~ /^staging.*/
+          when: never
+        - when: on_success
+
+.pytest:
+    extends: .test_base
+    rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
+    - when: on_success
+    tags:
+      - long execution time
+      - autoscaling
+    environment:
+        name: unsafe
+    stage: test/build
+    variables:
+        PYMOR_HYPOTHESIS_PROFILE: ci
+        PYMOR_PYTEST_EXTRA: ""
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    cache:
+        key: same_db_on_all_runners
+        paths:
+          - .hypothesis
+    artifacts:
+        when: always
+        name: "$CI_JOB_STAGE-$CI_COMMIT_REF_SLUG"
+        expire_in: 3 months
+        paths:
+            - src/pymortests/testdata/check_results/*/*_changed
+            - docs/source/*_extracted.py
+            - coverage*
+            - memory_usage.txt
+            - .hypothesis
+            - test_results*.xml
+
+.pytest_weekly:
+    extends: .pytest
+    timeout: 5h
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: always
+    variables:
+        PYMOR_HYPOTHESIS_PROFILE: ci_large
+
+.submit:
+    extends: .test_base
+    variables:
+        XDG_CACHE_DIR: /tmp
+    retry:
+        max: 2
+        when:
+            - always
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - when: on_success
+    stage: deploy
+    script: .ci/gitlab/coverage_submit.bash
+
+
+#******** end definition of base jobs *********************************************************************************#
+
+# https://docs.gitlab.com/ee/ci/yaml/README.html#workflowrules-templates
+include:
+  - template: 'Workflows/Branch-Pipelines.gitlab-ci.yml'
+
+#******* preflight stage
+
+preflight:
+    extends: .test_base
+    image: zivgitlab.wwu.io/pymor/pymor/ci-preflight
+    stage: preflight
+    script:
+        - ./.ci/gitlab/preflight.bash
+    artifacts:
+      reports:
+        dotenv: out.env
+
+ 
+#******* docker stage
+
+
+build current image:
+    extends: .test_base
+    image: zivgitlab.wwu.io/pymor/pymor/ci-preflight
+    stage: docker images
+    script:
+        - if [ ${CI_BUILD_CURRENT_IMAGE} != yes ] ; then exit 0; fi
+        - make DOCKER=podman ci_current_image
+        - make DOCKER=podman DOCKER_LOGIN_ARGS="-u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD" ci_current_image_push
+
+build oldest image:
+    extends: .test_base
+    image: zivgitlab.wwu.io/pymor/pymor/ci-preflight
+    stage: docker images
+    script:
+        - if [ ${CI_BUILD_OLDEST_IMAGE} != yes ] ; then exit 0; fi
+        - make DOCKER=podman ci_oldest_image
+        - make DOCKER=podman DOCKER_LOGIN_ARGS="-u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD" ci_oldest_image_push
+
+build fenics image:
+    extends: .test_base
+    image: zivgitlab.wwu.io/pymor/pymor/ci-preflight
+    stage: docker images
+    script:
+        - if [ ${CI_BUILD_FENICS_IMAGE} != yes ] ; then exit 0; fi
+        - make DOCKER=podman ci_fenics_image
+        - make DOCKER=podman DOCKER_LOGIN_ARGS="-u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD" ci_fenics_image_push
+
+build fenicsx image:
+    extends: .test_base
+    image: zivgitlab.wwu.io/pymor/pymor/ci-preflight
+    stage: docker images
+    script:
+        - if [ ${CI_BUILD_FENICSX_IMAGE} != yes ] ; then exit 0; fi
+        - make DOCKER=podman ci_fenicsx_image
+        - make DOCKER=podman DOCKER_LOGIN_ARGS="-u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD" ci_fenicsx_image_push
+      
+#******* test stage
+
+vanilla current:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    script: ./.ci/gitlab/test_vanilla.bash
+
+vanilla oldest:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-oldest:${CI_OLDEST_IMAGE_TAG}
+    script: ./.ci/gitlab/test_vanilla.bash
+
+vanilla current weekly:
+    extends: .pytest_weekly
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    script: ./.ci/gitlab/test_vanilla.bash
+
+vanilla oldest weekly:
+    extends: .pytest_weekly
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-oldest:${CI_OLDEST_IMAGE_TAG}
+    script: ./.ci/gitlab/test_vanilla.bash
+
+jupyter current:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    script: ./.ci/gitlab/test_jupyter.bash
+
+jupyter oldest:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-oldest:${CI_OLDEST_IMAGE_TAG}
+    script: ./.ci/gitlab/test_jupyter.bash
+
+mpi current:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: ""
+    retry:
+        max: 2
+        when: always
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    script: ./.ci/gitlab/test_mpi.bash
+
+mpi oldest:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: ""
+    retry:
+        max: 2
+        when: always
+    image: zivgitlab.wwu.io/pymor/pymor/ci-oldest:${CI_OLDEST_IMAGE_TAG}
+    script: ./.ci/gitlab/test_mpi.bash
+
+tutorials current:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    script: ./.ci/gitlab/test_tutorials.bash
+
+tutorials oldest:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-oldest:${CI_OLDEST_IMAGE_TAG}
+    script: ./.ci/gitlab/test_tutorials.bash
+
+cpp_demo current:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    script: ./.ci/gitlab/test_cpp_demo.bash
+
+cpp_demo oldest:
+    extends: .pytest
+    variables:
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve scikit_fem dealii"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-oldest:${CI_OLDEST_IMAGE_TAG}
+    script: ./.ci/gitlab/test_cpp_demo.bash
+
+ngsolve current:
+    extends: .pytest
+    variables:
+        PYMOR_PYTEST_EXTRA: "-m 'not builtin'"
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx scikit_fem dealii"
+        PYMOR_FIXTURES_DISABLE_BUILTIN: "1"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    script: ./.ci/gitlab/test_vanilla.bash
+
+scikit_fem current:
+    extends: .pytest
+    variables:
+        PYMOR_PYTEST_EXTRA: "-m 'not builtin'"
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve dealii"
+        PYMOR_FIXTURES_DISABLE_BUILTIN: "1"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    script: ./.ci/gitlab/test_vanilla.bash
+
+scikit_fem oldest:
+    extends: .pytest
+    variables:
+        PYMOR_PYTEST_EXTRA: "-m 'not builtin'"
+        PYMOR_CONFIG_DISABLE: "fenics fenicsx ngsolve dealii"
+        PYMOR_FIXTURES_DISABLE_BUILTIN: "1"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-oldest:${CI_OLDEST_IMAGE_TAG}
+    script: ./.ci/gitlab/test_vanilla.bash
+
+fenics:
+    extends: .pytest
+    variables: 
+        PYMOR_PYTEST_EXTRA: "-m 'not builtin'"
+        PYMOR_CONFIG_DISABLE: "fenicsx ngsolve scikit_fem dealii"
+        PYMOR_FIXTURES_DISABLE_BUILTIN: "1"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-fenics:${CI_FENICS_IMAGE_TAG}
+    script: 
+        - . /venv/bin/activate
+        - ./.ci/gitlab/test_vanilla.bash
+
+fenics mpi:
+    extends: .pytest
+    variables:
+        # PYMOR_PYTEST_EXTRA: "-m 'not builtin'"   # fails, needs to be fixed in mpi_run_demo_tests
+        PYMOR_CONFIG_DISABLE: "fenicsx ngsolve scikit_fem dealii"
+        PYMOR_FIXTURES_DISABLE_BUILTIN: "1"
+    retry:
+        max: 2
+        when: always
+    image: zivgitlab.wwu.io/pymor/pymor/ci-fenics:${CI_FENICS_IMAGE_TAG}
+    script: 
+        - . /venv/bin/activate
+        - ./.ci/gitlab/test_mpi.bash
+
+fenicsx:
+    extends: .pytest
+    variables: 
+        PYMOR_PYTEST_EXTRA: "-m 'not builtin'"
+        PYMOR_CONFIG_DISABLE: "fenics ngsolve scikit_fem dealii"
+        PYMOR_FIXTURES_DISABLE_BUILTIN: "1"
+    image: zivgitlab.wwu.io/pymor/pymor/ci-fenicsx:${CI_FENICSX_IMAGE_TAG}
+    script: 
+        - ./.ci/gitlab/test_vanilla.bash
+
+
+docs build:
+    extends: .test_base
+    tags: [mike]
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - when: on_success
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    script:
+        - ${CI_PROJECT_DIR}/.ci/gitlab/test_docs.bash
+    stage: test/build
+    artifacts:
+        paths:
+            - docs/_build/html
+            - docs/error.log
+
+
+#******* deploy stage
+
+
+submit coverage:
+    extends: .submit
+    environment:
+        name: safe
+    artifacts:
+        when: always
+        name: "coverage_reports"
+        paths:
+            - reports/
+    dependencies:
+        - mpi current
+        - tutorials current
+        - vanilla current
+        - jupyter current
+        - ngsolve current
+        - scikit_fem current
+        - fenics
+        - fenics mpi
+        - fenicsx
+        - preflight
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+
+coverage html:
+    extends: .submit
+    needs: 
+        - submit coverage
+        - preflight
+    dependencies: 
+        - submit coverage
+        - preflight
+    artifacts:
+        name: "coverage_html"
+        paths:
+            - coverage_html
+    script:
+        - coverage combine reports/coverage*
+        - coverage html --directory coverage_html
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+
+docs:
+    extends: .test_base
+    # makes sure this doesn't land on the test runner
+    tags: [mike]
+    image: zivgitlab.wwu.io/pymor/pymor/ci-current:${CI_CURRENT_IMAGE_TAG}
+    stage: deploy
+    resource_group: docs_deploy
+    needs:
+        - docs build
+        - preflight
+    dependencies:
+        - docs build
+        - preflight
+    script:
+        - ${CI_PROJECT_DIR}/.ci/gitlab/docs_deploy.bash
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - when: on_success
+    environment:
+        name: safe
+
+tag docker images:
+    extends: .test_base
+    rules:
+        - if: $CI_PIPELINE_SOURCE == "schedule"
+          when: never
+        - if: $CI_COMMIT_TAG || ($CI_COMMIT_BRANCH == "main")
+          when: on_success
+        - when: never
+    needs:
+        - build current image
+        - build oldest image
+        - build fenics image
+        - build fenicsx image
+        - preflight
+    dependencies:
+        - preflight
+    image: zivgitlab.wwu.io/pymor/pymor/ci-preflight
+    stage: deploy
+    script:
+        - make DOCKER=podman ci_images_pull
+        - make DOCKER=podman DOCKER_LOGIN_ARGS="-u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD"
+            TARGET_TAG=${CI_COMMIT_TAG:-$CI_COMMIT_BRANCH} ci_images_push
