@@ -22,12 +22,10 @@
   "schema_version": "1.0",
   "snapshot": {
     "category": "01-computational-pde-and-scientific-computing",
-    "copied_bytes": 4619269,
-    "copied_files": 505,
+    "copied_bytes": 4620256,
+    "copied_files": 510,
     "date": "2026-08-25",
-    "excluded_directories": [
-      "src/pymortests/data"
-    ],
+    "excluded_directories": [],
     "excluded_files": [],
     "folder": "pymor-main",
     "kind": "independent-code-snapshot",
