@@ -77,6 +77,7 @@ jobs:
   coverage_to_html:
     name: Upload HTML Coverage Report
     runs-on: ubuntu-22.04
+    continue-on-error: true
     needs:
       - miniconda
     steps:
@@ -107,6 +108,7 @@ jobs:
   coverage_to_codecov:
     name: Report Coverage to codecov.io
     runs-on: ubuntu-22.04
+    continue-on-error: true
     needs:
       - miniconda
     steps:
@@ -120,6 +122,7 @@ jobs:
       # See https://github.com/codecov/codecov-action/issues/837.
       - uses: codecov/codecov-action@v4
         name: Upload coverage
+        continue-on-error: true
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: github_actions
