@@ -207,3 +207,21 @@ Should you have any questions regarding pyMOR or wish to contribute,
 do not hesitate to send us an email at
 
     main.developers@pymor.org
+
+
+## Step-by-step user guide
+
+1. **Install the features you need.** Use <code>python -m pip install pymor</code> for the core package, or <code>python -m pip install "pymor[gui]"</code> when using Qt-based demos. Follow the additional-dependency notes above for MPI, Slycot, or external solver integrations.
+2. **Start with the getting-started tutorial.** Read [docs/source/getting_started.md](docs/source/getting_started.md), then run <code>pymor-demo thermalblock --plot-err --plot-solutions 3 2 3 32</code> to see a reduced-basis thermal-block demo. Choose a method-specific tutorial from [docs/source/tutorials.md](docs/source/tutorials.md) after the demo runs.
+3. **Create or import a full-order model.** Use pyMOR's built-in discretizers for supported PDEs, or wrap an external PDE solver through the documented operator/model interfaces. Validate the full-order model before reducing it.
+4. **Build a reduced model.** Select the reduction method for the problem: greedy/reduced-basis for parametric models, POD/DMD for snapshot data, system-theoretic methods for LTI systems, interpolation methods for data-driven models, or neural-network methods when appropriate.
+5. **Assess accuracy and speed.** Compare reduced and full-order outputs over training and holdout parameters, inspect error/residual indicators, and adjust basis size or sampling strategy.
+6. **Use the result.** Evaluate the reduced model for parameter studies, optimization, control, or repeated queries; serialize models/results when the workflow requires handoff or reuse.
+
+### Functionality map
+
+- Generic discretization/model/operator/vector interfaces that support NumPy/SciPy and external PDE solver backends.
+- Reduced-basis/greedy methods, POD, DMD, interpolation (including Loewner and AAA), system-theoretic reduction, and neural-network-based reduction.
+- Built-in finite-volume and finite-element discretizations, numerical linear algebra, visualization, and interfaces to external PDE solvers.
+- Use the local [tutorials](docs/source/tutorials.md), [docs](docs/), [demos](src/pymordemos/), and [API reference](https://docs.pymor.org/) for complete algorithm options.
+
